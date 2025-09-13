@@ -23,6 +23,7 @@
     "multer": "^2.0.2",
     "mysql2": "^3.14.3",
     "on-headers": "file:on-headers-1.0.2.tgz",
+    "pg": "^8.16.3",
     "random-bytes": "file:random-bytes-1.0.0.tgz",
     "uid-safe": "file:uid-safe-2.1.5.tgz"
   },

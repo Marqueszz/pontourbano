@@ -616,8 +616,9 @@
 
                 // Carrega problemas existentes do backend
                 try {
-                    const response = await fetch('http://localhost:3000/problemas');
-                    const dados = await response.json();
+                const response = await fetch('https://pontourbano.onrender.com/problemas');
+                const dados = await response.json();
+
                     
                     document.getElementById('problemaCount').textContent = 
                         `${dados.length} ${dados.length === 1 ? 'problema' : 'problemas'} registrados`;
@@ -678,11 +679,11 @@
                         formData.append('foto', fileInput.files[0]);
                     }
                     
-                    try {
-                        const response = await fetch('http://localhost:3000/problemas', {
-                            method: 'POST',
-                            body: formData
-                        });
+                try {
+                    const response = await fetch('https://pontourbano.onrender.com/problemas', {
+                        method: 'POST',
+                        body: formData
+                    });
                         
                         const result = await response.json();
                         

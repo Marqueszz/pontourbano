@@ -266,53 +266,54 @@
         <span id="notificationText">Carregando...</span>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Adicionar evento de submit ao formulário
-            document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Adicionar evento de submit ao formulário
+        document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const nome = document.getElementById('nome').value;
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            
+            // Validação básica
+            if (!nome || !email || !senha) {
+                showNotification('Por favor, preencha todos os campos', 'error');
+                return;
+            }
+            
+            if (senha.length < 6) {
+                showNotification('A senha deve ter pelo menos 6 caracteres', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('https://pontourbano.onrender.com/cadastro', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nome, email, senha })
+                });
                 
-                const nome = document.getElementById('nome').value;
-                const email = document.getElementById('email').value;
-                const senha = document.getElementById('senha').value;
+                const result = await response.json();
                 
-                // Validação básica
-                if (!nome || !email || !senha) {
-                    showNotification('Por favor, preencha todos os campos', 'error');
-                    return;
-                }
-                
-                if (senha.length < 6) {
-                    showNotification('A senha deve ter pelo menos 6 caracteres', 'error');
-                    return;
-                }
-                
-                try {
-                    const response = await fetch('http://localhost:3000/cadastro', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ nome, email, senha })
-                    });
+                if (result.success) {
+                    showNotification('Cadastro realizado com sucesso! Redirecionando...', 'success');
                     
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        showNotification('Cadastro realizado com sucesso! Redirecionando...', 'success');
-                        
-                        // Redirecionar após cadastro bem-sucedido
-                        setTimeout(() => {
-                            window.location.href = 'login.html';
-                        }, 2000);
-                    } else {
-                        showNotification(result.message, 'error');
-                    }
-                } catch (error) {
-                    console.error('Erro:', error);
-                    showNotification('Erro ao realizar cadastro', 'error');
+                    // Redirecionar após cadastro bem-sucedido
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showNotification(result.message, 'error');
                 }
-            });
+            } catch (error) {
+                console.error('Erro:', error);
+                showNotification('Erro ao realizar cadastro', 'error');
+            }
+        });
+
             
             // Função para mostrar notificação
             function showNotification(message, type = 'success') {
