@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto Urbano - Login</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="favicon_io/site.webmanifest">
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --primary-light: #a8c7fa;
+            --secondary: #f8f9fa;
+            --text: #202124;
+            --text-light: #5f6368;
+            --success: #34a853;
+            --error: #ea4335;
+            --warning: #fbbc05;
+            --border: #dadce0;
+            --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f8ff;
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .auth-container {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.1;
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .form-container {
+            padding: 24px;
+            background: white;
+        }
+        
+        .form-container h2 {
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary-light);
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s, box-shadow 0.3s;
+            background: white;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: background 0.3s, transform 0.2s;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: var(--primary-dark);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .auth-links {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+        
+        .auth-links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .auth-links a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-10px);
+        }
+        
+        .notification.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification i {
+            font-size: 1.4rem;
+        }
+        
+        .success { 
+            background: white; 
+            color: var(--success); 
+            border-left: 4px solid var(--success);
+        }
+        
+        .error { 
+            background: white; 
+            color: var(--error); 
+            border-left: 4px solid var(--error);
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <header>
+            <h1><i class="fas fa-map-marker-alt"></i> Ponto Urbano</h1>
+            <p>Acesse sua conta para continuar</p>
+        </header>
+        
+        <div class="form-container">
+            <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> E-mail</label>
+                    <input type="email" id="email" placeholder="seu@email.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="senha"><i class="fas fa-lock"></i> Senha</label>
+                    <input type="password" id="senha" placeholder="Digite sua senha" required>
+                </div>
+                
+                <button type="submit"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+                
+                <div class="auth-links">
+                    Não tem uma conta? <a href="cadastro.html">Cadastre-se</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Ponto Urbano &copy; 2025 - Projeto Feira Técnica</p>
+    </div>
+    
+    <!-- Notificação -->
+    <div id="notification" class="notification">
+        <i class="fas fa-info-circle"></i> 
+        <span id="notificationText">Carregando...</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Adicionar evento de submit ao formulário
+            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const senha = document.getElementById('senha').value;
+                
+                // Validação básica
+                if (!email || !senha) {
+                    showNotification('Por favor, preencha todos os campos', 'error');
+                    return;
+                }
+                
+                try {
+                    // Fazer a requisição real para a API de login
+                    const response = await fetch('http://localhost:3000/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, senha }),
+                        credentials: 'include' // Importante para cookies de sessão
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showNotification('Login realizado com sucesso.', 'success');
+                        
+                        // Redirecionar após login bem-sucedido
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                    } else {
+                        showNotification(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                    showNotification('Erro ao conectar com o servidor', 'error');
+                }
+            });
+
+            // Função para mostrar notificação
+            function showNotification(message, type = 'success') {
+                const notification = document.getElementById('notification');
+                const notificationText = document.getElementById('notificationText');
+                
+                notificationText.textContent = message;
+                notification.className = 'notification'; // Reseta as classes
+                
+                // Adiciona classes baseadas no tipo
+                notification.classList.add(type);
+                notification.classList.add('visible');
+                
+                // Ícone baseado no tipo
+                let iconClass;
+                switch(type) {
+                    case 'success':
+                        iconClass = 'fas fa-check-circle';
+                        break;
+                    case 'error':
+                        iconClass = 'fas fa-exclamation-circle';
+                        break;
+                    default:
+                        iconClass = 'fas fa-info-circle';
+                }
+                
+                notification.innerHTML = `<i class="${iconClass}"></i> <span id="notificationText">${message}</span>`;
+                
+                // Esconde a notificação após 5 segundos
+                setTimeout(() => {
+                    notification.classList.remove('visible');
+                }, 4000);
+            }
+        });
+        
+    </script>
+</body>
+</html>

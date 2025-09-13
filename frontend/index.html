@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto Urbano - Mapeamento de Problemas Urbanos</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="favicon_io/site.webmanifest">
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --primary-light: #a8c7fa;
+            --secondary: #f8f9fa;
+            --text: #202124;
+            --text-light: #5f6368;
+            --success: #34a853;
+            --error: #ea4335;
+            --warning: #fbbc05;
+            --border: #dadce0;
+            --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f8ff;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.1;
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        #map {
+            height: 500px;
+            width: 100%;
+            z-index: 1;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-10px);
+        }
+        
+        .notification.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification i {
+            font-size: 1.4rem;
+        }
+        
+        .success { 
+            background: white; 
+            color: var(--success); 
+            border-left: 4px solid var(--success);
+        }
+        
+        .error { 
+            background: white; 
+            color: var(--error); 
+            border-left: 4px solid var(--error);
+        }
+        
+        .info { 
+            background: white; 
+            color: var(--primary); 
+            border-left: 4px solid var(--primary);
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 992px) {
+            .main-content {
+                flex-direction: row;
+            }
+            
+            .map-section {
+                flex: 7;
+            }
+            
+            .form-section {
+                flex: 3;
+                border-left: 1px solid var(--border);
+            }
+        }
+        
+        .stats {
+            padding: 16px 20px;
+            background: var(--secondary);
+            font-weight: 500;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .stats i {
+            font-size: 1.2rem;
+        }
+        
+        .form-container {
+            padding: 24px;
+            background: white;
+        }
+        
+        .form-container h2 {
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary-light);
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s, box-shadow 0.3s;
+            background: white;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: background 0.3s, transform 0.2s;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background: var(--primary-dark);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .location-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background-color: #e8f0fe;
+            border-radius: 8px;
+            margin-top: 16px;
+            color: var(--primary-dark);
+            font-size: 0.9rem;
+        }
+        
+        .location-hint i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+        
+        .category-icons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--secondary);
+            border-radius: 8px;
+            justify-content: center;
+        }
+        
+        .category-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            width: 70px;
+            text-align: center;
+        }
+        
+        .category-icon i {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+            color: var(--primary);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            background: var(--secondary);
+            border-top: 1px solid var(--border);
+        }
+        
+        /* Estilo para os clusters de marcadores */
+        .marker-cluster-small {
+            background-color: rgba(181, 226, 140, 0.6);
+        }
+        
+        .marker-cluster-small div {
+            background-color: rgba(110, 204, 57, 0.6);
+        }
+        
+        .marker-cluster-medium {
+            background-color: rgba(241, 211, 87, 0.6);
+        }
+        
+        .marker-cluster-medium div {
+            background-color: rgba(240, 194, 12, 0.6);
+        }
+        
+        .marker-cluster-large {
+            background-color: rgba(253, 156, 115, 0.6);
+        }
+        
+        .marker-cluster-large div {
+            background-color: rgba(241, 128, 23, 0.6);
+        }
+        
+        /* Estilos para o select de categorias */
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235f6368'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 40px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+        
+        select:focus {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231a73e8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+        }
+        
+        /* Estilização personalizada para o input de arquivo */
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+            border-radius: 8px;
+        }
+        
+        .file-input-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s, transform 0.2s;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .file-input-button:hover {
+            background: var(--primary-dark);
+        }
+        
+        .file-input-button:active {
+            transform: scale(0.98);
+        }
+        
+        #foto {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-name {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            text-align: center;
+            padding: 4px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-map-marker-alt"></i> Ponto Urbano</h1>
+            <p>Mapeamento colaborativo de problemas urbanos</p>
+        </header>
+        
+        <div class="stats">
+            <i class="fas fa-chart-bar"></i>
+            <span id="problemaCount">Carregando problemas...</span>
+        </div>
+        
+        <div class="main-content">
+            <div class="map-section">
+                <div id="map"></div>
+                
+                <div class="category-icons">
+                    <div class="category-icon">
+                        <i class="fas fa-road"></i>
+                        <span>Infraestrutura</span>
+                    </div>
+                    <div class="category-icon">
+                        <i class="fas fa-tree"></i>
+                        <span>Meio Ambiente</span>
+                    </div>
+                    <div class="category-icon">
+                        <i class="fas fa-bus"></i>
+                        <span>Mobilidade</span>
+                    </div>
+                    <div class="category-icon">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Segurança</span>
+                    </div>
+                    <div class="category-icon">
+                        <i class="fas fa-tint"></i>
+                        <span>Saneamento</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-container">
+                    <h2><i class="fas fa-plus-circle"></i> Reportar Problema</h2>
+                    <form id="problemaForm">
+                        <div class="form-group">
+                            <label for="categoria"><i class="fas fa-tag"></i> Categoria</label>
+                            <select id="categoria" required>
+                                <option value="">Selecione uma categoria</option>
+                                <option value="infraestrutura">Infraestrutura</option>
+                                <option value="meio_ambiente">Meio Ambiente</option>
+                                <option value="mobilidade">Mobilidade</option>
+                                <option value="seguranca">Segurança</option>
+                                <option value="saneamento">Saneamento</option>
+                                <option value="habitacao">Habitação</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tipo"><i class="fas fa-exclamation-circle"></i> Tipo de Problema</label>
+                            <input type="text" id="tipo" placeholder="Ex: Buraco na via" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="descricao"><i class="fas fa-align-left"></i> Descrição</label>
+                            <textarea id="descricao" placeholder="Descreva o problema em detalhes..." required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="data"><i class="fas fa-calendar"></i> Data</label>
+                            <input type="date" id="data" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="foto"><i class="fas fa-camera"></i> Foto (opcional)</label>
+                            <div class="file-input-container">
+                                <button type="button" class="file-input-button">
+                                    <i class="fas fa-upload"></i> Escolher arquivo
+                                </button>
+                                <input type="file" id="foto" accept="image/*">
+                            </div>
+                            <div id="fileName" class="file-name">Nenhum arquivo escolhido</div>
+                        </div>
+                        
+                        <button type="submit"><i class="fas fa-paper-plane"></i> Enviar Relato</button>
+                    </form>
+                    
+                    <div class="location-hint">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Clique no mapa para selecionar a localização do problema</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Ponto Urbano &copy; 2025 - Projeto Feira Técnica</p>
+        </div>
+    </div>
+    
+    <!-- Notificação -->
+    <div id="notification" class="notification">
+        <i class="fas fa-info-circle"></i> 
+        <span id="notificationText">Carregando...</span>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Marker Cluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Definir limites do mundo inteiro
+            const southWest = L.latLng(-85, -180);
+            const northEast = L.latLng(85, 180);
+            const maxBounds = L.latLngBounds(southWest, northEast);
+
+            // Inicialização do mapa com limites
+            const map = L.map('map', {
+                maxBounds: maxBounds,
+                maxBoundsViscosity: 1.0, // Impede completamente de sair dos limites
+                minZoom: 2 // Zoom mínimo para ver o mundo inteiro
+            }).setView([-19.7621, -44.084], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                noWrap: true // Evita repetição infinita do mapa
+            }).addTo(map);
+
+            // Função para atualizar o tamanho do mapa
+            function updateMapSize() {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            }
+
+            // Atualizar o mapa quando a janela for redimensionada
+            window.addEventListener('resize', updateMapSize);
+
+            // Atualizar o mapa após o carregamento completo
+            window.addEventListener('load', updateMapSize);
+            
+            // Atualizar o mapa após um pequeno delay para garantir que o layout esteja renderizado
+            setTimeout(updateMapSize, 300);                
+                let lat = null;
+                let lng = null;
+                let tempMarker = null; // Variável para armazenar o marcador temporário
+
+                // Ícones personalizados por categoria
+                const criarIcone = (icone, cor) => {
+                    return L.divIcon({
+                        html: `<div style="background-color: ${cor}; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 2px solid white;">
+                                <i class="${icone}" style="color: white; font-size: 16px;"></i>
+                              </div>`,
+                        className: 'custom-marker',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+                };
+
+                const icones = {
+                    infraestrutura: criarIcone('fas fa-road', '#1a73e8'),
+                    meio_ambiente: criarIcone('fas fa-tree', '#34a853'),
+                    mobilidade: criarIcone('fas fa-bus', '#fbbc05'),
+                    seguranca: criarIcone('fas fa-shield-alt', '#ea4335'),
+                    saneamento: criarIcone('fas fa-tint', '#00bcd4'),
+                    habitacao: criarIcone('fas fa-home', '#ff5722'),
+                    outros: criarIcone('fas fa-map-marker-alt', '#9e9e9e')
+                };
+
+                // Função para adicionar marcador temporário
+                const addTempMarker = (latlng, categoria) => {
+                    // Remove marcador temporário anterior, se existir
+                    if (tempMarker) {
+                        map.removeLayer(tempMarker);
+                    }
+                    
+                    // Obtém o ícone baseado na categoria
+                    const icone = icones[categoria] || icones.outros;
+                    
+                    // Adiciona o novo marcador temporário
+                    tempMarker = L.marker(latlng, { icon: icone, zIndexOffset: 1000 })
+                        .addTo(map)
+                };
+
+                // Captura clique no mapa
+                map.on('click', function (e) {
+                    lat = e.latlng.lat;
+                    lng = e.latlng.lng;
+                    
+                    // Obtém a categoria selecionada
+                    const categoria = document.getElementById('categoria').value || 'outros';
+                    
+                    // Adiciona marcador temporário
+                    addTempMarker(e.latlng, categoria);                    
+                });
+
+                // Atualiza o marcador temporário quando a categoria muda
+                document.getElementById('categoria').addEventListener('change', function() {
+                    if (lat !== null && lng !== null) {
+                        const categoria = this.value || 'outros';
+                        addTempMarker([lat, lng], categoria);
+                    }
+                });
+
+                // Crie um grupo de clusters
+                const markers = L.markerClusterGroup({
+                    spiderfyOnMaxZoom: true,
+                    showCoverageOnHover: false,
+                    zoomToBoundsOnClick: true,
+                    maxClusterRadius: 80
+                });
+
+                // Adicione o grupo de clusters ao mapa
+                map.addLayer(markers);
+
+                // Carrega problemas existentes do backend
+                try {
+                    const response = await fetch('http://localhost:3000/problemas');
+                    const dados = await response.json();
+                    
+                    document.getElementById('problemaCount').textContent = 
+                        `${dados.length} ${dados.length === 1 ? 'problema' : 'problemas'} registrados`;
+                        
+                    dados.forEach(p => {
+                        if (p.latitude && p.longitude) {
+                            const icone = icones[p.categoria] || icones.outros;
+                            const dataFormatada = new Date(p.data).toLocaleDateString('pt-BR');
+                            const marker = L.marker([p.latitude, p.longitude], { icon: icone })
+                                .bindPopup(`
+                                    <div style="min-width: 250px;">
+                                        <h3 style="margin: 0 0 8px 0; color: #1a73e8;">${p.tipo}</h3>
+                                        <p style="margin: 0 0 12px 0;">${p.descricao}</p>
+                                        <div style="display: flex; justify-content: space-between; color: #5f6368; font-size: 0.9rem;">
+                                            <span>${p.categoria.replace('_', ' ')}</span>
+                                            <span>${dataFormatada}</span>
+                                        </div>
+                                        ${p.foto ? `
+                                        <div style="margin-top:12px; text-align:center;">
+                                            <img src="http://localhost:3000/${p.foto}" 
+                                                style="max-width:100%; max-height:150px; 
+                                                    display:block; margin:0 auto;
+                                                    border-radius:6px;
+                                                    object-fit:contain;">
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                `);
+                            
+                            // Adiciona cada marcador ao grupo de clusters
+                            markers.addLayer(marker);
+                        }
+                    });
+                } catch (error) {
+                    console.error('Erro ao carregar problemas:', error);
+                    showNotification('Erro ao carregar problemas do servidor', 'error');
+                }
+
+                // Adicionar evento de submit ao formulário
+                document.getElementById('problemaForm').addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    if (lat === null || lng === null) {
+                        showNotification('Por favor, selecione um local no mapa', 'error');
+                        return;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('tipo', document.getElementById('tipo').value);
+                    formData.append('descricao', document.getElementById('descricao').value);
+                    formData.append('data', document.getElementById('data').value);
+                    formData.append('latitude', lat);
+                    formData.append('longitude', lng);
+                    formData.append('categoria', document.getElementById('categoria').value);
+                    
+                    const fileInput = document.getElementById('foto');
+                    if (fileInput.files[0]) {
+                        formData.append('foto', fileInput.files[0]);
+                    }
+                    
+                    try {
+                        const response = await fetch('http://localhost:3000/problemas', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            showNotification('Problema registrado com sucesso!');
+                            this.reset();
+                            lat = lng = null;
+                            
+                            // Remove o marcador temporário
+                            if (tempMarker) {
+                                map.removeLayer(tempMarker);
+                                tempMarker = null;
+                            }
+                            
+                            // Recarregar os problemas no mapa
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            showNotification('Erro: ' + (result.message || 'Resposta inválida do servidor'), 'error');
+                        }
+                    } catch (error) {
+                        console.error('Erro:', error);
+                        showNotification('Erro ao conectar com o servidor', 'error');
+                    }
+                });
+
+                // Função para mostrar notificação
+                function showNotification(message, type = 'success') {
+                    const notification = document.getElementById('notification');
+                    const notificationText = document.getElementById('notificationText');
+                    
+                    notificationText.textContent = message;
+                    notification.className = 'notification'; // Reseta as classes
+                    
+                    // Adiciona classes baseadas no tipo
+                    notification.classList.add(type);
+                    notification.classList.add('visible');
+                    
+                    // Ícone baseado no tipo
+                    let iconClass;
+                    switch(type) {
+                        case 'success':
+                            iconClass = 'fas fa-check-circle';
+                            break;
+                        case 'error':
+                            iconClass = 'fas fa-exclamation-circle';
+                            break;
+                        case 'info':
+                            iconClass = 'fas fa-info-circle';
+                            break;
+                        default:
+                            iconClass = 'fas fa-info-circle';
+                    }
+                    
+                    notification.innerHTML = `<i class="${iconClass}"></i> <span id="notificationText">${message}</span>`;
+                    
+                    // Esconde a notificação após 5 segundos
+                    setTimeout(() => {
+                        notification.classList.remove('visible');
+                    }, 4000);
+                }
+
+                // Definir data atual como padrão
+                document.getElementById('data').valueAsDate = new Date();
+                
+                // Script para o input de arquivo personalizado
+                document.getElementById('foto').addEventListener('change', function(e) {
+                    const fileName = this.files[0] ? this.files[0].name : 'Nenhum arquivo escolhido';
+                    document.getElementById('fileName').textContent = fileName;
+                });
+                
+            } catch (error) {
+                console.error('Erro crítico na inicialização:', error);
+                showNotification('Erro crítico: ' + error.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>
