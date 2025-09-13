@@ -103,8 +103,8 @@ const requireAuth = (req, res, next) => {
 };
 
 // Rotas
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../frontend/cadastro.html')));
-app.get('/home', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
+app.get('/home', (req, res) => res.sendFile(path.join(__dirname, '../frontend/mapa.html')));
 
 // Cadastro
 app.post('/cadastro', async (req, res) => {
