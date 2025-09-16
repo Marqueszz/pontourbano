@@ -185,7 +185,7 @@ app.get('/problemas', async (req, res) => {
 
 app.post('/problemas', requireAuth, upload.single('foto'), async (req, res) => {
   const { tipo, descricao, data, latitude, longitude, categoria } = req.body;
-  const fotoPath = req.file ? `uploads/${req.file.filename}` : null;
+  const fotoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
   if (!tipo || !descricao || !data || latitude == null || longitude == null || !categoria) {
     if (req.file) fs.unlinkSync(req.file.path);
