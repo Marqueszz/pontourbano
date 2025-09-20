@@ -21,7 +21,7 @@ const pool = new Pool({
   }
 });
 
-// Configuração do Nodemailer para envio de emails
+// Configuração do Nodemailer (API) para envio de emails
 const transporter = nodemailer.createTransporter({
   service: 'gmail',
   auth: {
