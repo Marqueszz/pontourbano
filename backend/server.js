@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const multer = require('multer');
 const session = require('express-session');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,15 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
+  }
+});
+
+// Configuração do Nodemailer para envio de emails
+const transporter = nodemailer.createTransporter({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'pontourbano@gmail.com',
+    pass: process.env.EMAIL_PASS || 'senha_app_gmail'
   }
 });
 
@@ -50,6 +60,7 @@ async function initDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
 
     client.release();
   } catch (error) {
@@ -205,6 +216,68 @@ app.post('/problemas', requireAuth, upload.single('foto'), async (req, res) => {
     res.status(500).json({ success: false, message: 'Erro ao salvar problema', error: error.message });
   }
 });
+
+// Endpoint para feedback
+app.post('/feedback', async (req, res) => {
+  const { nome, email, feedback, destinatario } = req.body;
+  
+  if (!nome || !email || !feedback) {
+    return res.status(400).json({ success: false, message: 'Todos os campos são obrigatórios' });
+  }
+
+  try {
+
+    // Configurar email
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'pontourbano@gmail.com',
+      to: destinatario || 'gustavomarquesetec1@gmail.com',
+      subject: `Feedback do Ponto Urbano - ${nome}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">🗺️ Ponto Urbano</h1>
+            <p style="margin: 8px 0 0 0; opacity: 0.9;">Novo Feedback Recebido</p>
+          </div>
+          
+          <div style="padding: 30px; background: white;">
+            <h2 style="color: #1a73e8; margin-bottom: 20px;">Detalhes do Feedback</h2>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <p style="margin: 0 0 10px 0;"><strong>Nome:</strong> ${nome}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Email:</strong> ${email}</p>
+              <p style="margin: 0;"><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+            </div>
+            
+            <div style="background: white; border: 1px solid #dadce0; padding: 20px; border-radius: 8px;">
+              <h3 style="color: #202124; margin: 0 0 15px 0;">Mensagem:</h3>
+              <p style="color: #5f6368; line-height: 1.6; margin: 0;">${feedback}</p>
+            </div>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #5f6368; font-size: 14px;">
+            <p style="margin: 0;">Este email foi enviado automaticamente pelo sistema Ponto Urbano.</p>
+            <p style="margin: 5px 0 0 0;">© 2025 Ponto Urbano - Projeto Feira Técnica</p>
+          </div>
+        </div>
+      `
+    };
+
+    // Tentar enviar email (não bloquear se falhar)
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log('Email de feedback enviado com sucesso');
+    } catch (emailError) {
+      console.error('Erro ao enviar email de feedback:', emailError);
+      // Não retornar erro para o usuário, pois o feedback foi salvo no banco
+    }
+
+    res.json({ success: true, message: 'Feedback enviado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao processar feedback:', error);
+    res.status(500).json({ success: false, message: 'Erro ao enviar feedback', error: error.message });
+  }
+});
+
 
 // 404
 app.use((req, res) => res.status(404).json({ success: false, message: 'Rota não encontrada' }));
