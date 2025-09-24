@@ -8,25 +8,20 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const multer = require('multer');
 const session = require('express-session');
-const nodemailer = require('nodemailer');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configuração do Cloudinary
+cloudinary.config({
+});
 
 // Configuração do PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
-  }
-});
-
-// Configuração do Nodemailer para envio de emails
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'pontourbano@gmail.com',
-    pass: process.env.EMAIL_PASS || 'senha_app_gmail'
   }
 });
 
@@ -56,11 +51,10 @@ async function initDatabase() {
         latitude NUMERIC(10, 8) NOT NULL,
         longitude NUMERIC(11, 8) NOT NULL,
         categoria VARCHAR(50) NOT NULL,
-        foto VARCHAR(255),
+        foto VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
 
     client.release();
   } catch (error) {
@@ -90,19 +84,21 @@ app.use(session({
   }
 }));
 
-// Multer para upload de imagens
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../frontend/uploads');
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    cb(null, uploadDir);
+// Multer para upload de imagens em memória (não salva no servidor)
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limite
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos de imagem são permitidos!'), false);
+    }
   }
 });
-const upload = multer({ storage: storage });
 
 // Inicializa banco
 initDatabase();
@@ -179,105 +175,110 @@ app.get('/auth/check', (req, res) => {
   else res.json({ authenticated: false });
 });
 
-// Arquivos estáticos
-app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
-app.use('/icons', express.static(path.join(__dirname, '../frontend/icons')));
-
-// Problemas
+// Problemas - Listar
 app.get('/problemas', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM problemas ORDER BY created_at DESC');
-    res.json(result.rows);
+    
+    // Garantir que as URLs das fotos sejam absolutas
+    const problemas = result.rows.map(problema => {
+      return problema;
+    });
+    
+    res.json(problemas);
   } catch (error) {
     console.error('Erro ao buscar problemas:', error);
     res.status(500).json({ success: false, message: 'Erro ao buscar problemas', error: error.message });
   }
 });
 
+// Problemas - Criar (com Cloudinary)
 app.post('/problemas', requireAuth, upload.single('foto'), async (req, res) => {
   const { tipo, descricao, data, latitude, longitude, categoria } = req.body;
-  const fotoPath = req.file ? `/uploads/${req.file.filename}` : null;
+  let fotoUrl = null;
 
   if (!tipo || !descricao || !data || latitude == null || longitude == null || !categoria) {
-    if (req.file) fs.unlinkSync(req.file.path);
     return res.status(400).json({ success: false, message: 'Todos os campos são obrigatórios' });
   }
 
   try {
+    // Se há uma foto, faz upload para o Cloudinary
+    if (req.file) {
+      try {
+        // Converter buffer para base64 para upload no Cloudinary
+        const b64 = Buffer.from(req.file.buffer).toString('base64');
+        const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+        
+        const uploadResult = await cloudinary.uploader.upload(dataURI, {
+          folder: 'ponto-urbano',
+          quality: 'auto',
+          fetch_format: 'auto',
+          transformation: [
+            { width: 800, height: 600, crop: 'limit' }
+          ]
+        });
+        fotoUrl = uploadResult.secure_url;
+        console.log('Imagem enviada para Cloudinary:', fotoUrl);
+      } catch (cloudinaryError) {
+        console.error('Erro no upload para Cloudinary:', cloudinaryError);
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Erro ao fazer upload da imagem', 
+          error: cloudinaryError.message 
+        });
+      }
+    }
+
     const insert = await pool.query(
       'INSERT INTO problemas (tipo, descricao, data, latitude, longitude, categoria, foto) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
-      [tipo, descricao, data, latitude, longitude, categoria, fotoPath]
+      [tipo, descricao, data, latitude, longitude, categoria, fotoUrl]
     );
 
-    res.status(201).json({ success: true, message: 'Problema registrado com sucesso', id: insert.rows[0].id, foto: fotoPath });
+    res.status(201).json({ 
+      success: true, 
+      message: 'Problema registrado com sucesso', 
+      id: insert.rows[0].id, 
+      foto: fotoUrl 
+    });
   } catch (error) {
-    if (req.file) fs.unlinkSync(req.file.path);
     console.error('Erro ao salvar problema:', error);
     res.status(500).json({ success: false, message: 'Erro ao salvar problema', error: error.message });
   }
 });
 
-// Endpoint para feedback
-app.post('/feedback', async (req, res) => {
-  const { nome, email, feedback, destinatario } = req.body;
-  
-  if (!nome || !email || !feedback) {
-    return res.status(400).json({ success: false, message: 'Todos os campos são obrigatórios' });
-  }
-
+// Endpoint para deletar uma imagem do Cloudinary (opcional, para administração)
+app.delete('/problemas/:id/foto', requireAuth, async (req, res) => {
   try {
-
-    // Configurar email
-    const mailOptions = {
-      from: process.env.EMAIL_USER || 'pontourbano@gmail.com',
-      to: destinatario || 'gustavomarquesetec1@gmail.com',
-      subject: `Feedback do Ponto Urbano - ${nome}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0;">🗺️ Ponto Urbano</h1>
-            <p style="margin: 8px 0 0 0; opacity: 0.9;">Novo Feedback Recebido</p>
-          </div>
-          
-          <div style="padding: 30px; background: white;">
-            <h2 style="color: #1a73e8; margin-bottom: 20px;">Detalhes do Feedback</h2>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-              <p style="margin: 0 0 10px 0;"><strong>Nome:</strong> ${nome}</p>
-              <p style="margin: 0 0 10px 0;"><strong>Email:</strong> ${email}</p>
-              <p style="margin: 0;"><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
-            </div>
-            
-            <div style="background: white; border: 1px solid #dadce0; padding: 20px; border-radius: 8px;">
-              <h3 style="color: #202124; margin: 0 0 15px 0;">Mensagem:</h3>
-              <p style="color: #5f6368; line-height: 1.6; margin: 0;">${feedback}</p>
-            </div>
-          </div>
-          
-          <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #5f6368; font-size: 14px;">
-            <p style="margin: 0;">Este email foi enviado automaticamente pelo sistema Ponto Urbano.</p>
-            <p style="margin: 5px 0 0 0;">© 2025 Ponto Urbano - Projeto Feira Técnica</p>
-          </div>
-        </div>
-      `
-    };
-
-    // Tentar enviar email (não bloquear se falhar)
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log('Email de feedback enviado com sucesso');
-    } catch (emailError) {
-      console.error('Erro ao enviar email de feedback:', emailError);
-      // Não retornar erro para o usuário, pois o feedback foi salvo no banco
+    const problemaId = req.params.id;
+    
+    // Buscar o problema para obter a URL da foto
+    const result = await pool.query('SELECT foto FROM problemas WHERE id = $1', [problemaId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Problema não encontrado' });
     }
-
-    res.json({ success: true, message: 'Feedback enviado com sucesso!' });
+    
+    const fotoUrl = result.rows[0].foto;
+    
+    if (fotoUrl && fotoUrl.includes('cloudinary.com')) {
+      // Extrair o public_id da URL do Cloudinary
+      const parts = fotoUrl.split('/');
+      const filename = parts[parts.length - 1];
+      const publicId = 'ponto-urbano/' + filename.split('.')[0];
+      
+      // Deletar a imagem do Cloudinary
+      await cloudinary.uploader.destroy(publicId);
+    }
+    
+    // Atualizar o problema para remover a referência da foto
+    await pool.query('UPDATE problemas SET foto = NULL WHERE id = $1', [problemaId]);
+    
+    res.json({ success: true, message: 'Foto removida com sucesso' });
   } catch (error) {
-    console.error('Erro ao processar feedback:', error);
-    res.status(500).json({ success: false, message: 'Erro ao enviar feedback', error: error.message });
+    console.error('Erro ao remover foto:', error);
+    res.status(500).json({ success: false, message: 'Erro ao remover foto', error: error.message });
   }
 });
-
 
 // 404
 app.use((req, res) => res.status(404).json({ success: false, message: 'Rota não encontrada' }));
@@ -285,10 +286,18 @@ app.use((req, res) => res.status(404).json({ success: false, message: 'Rota não
 // Erros gerais
 app.use((err, req, res, next) => {
   console.error('Erro:', err.stack);
+  
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ success: false, message: 'A imagem deve ter no máximo 5MB' });
+    }
+  }
+  
   res.status(500).json({ success: false, message: 'Erro interno no servidor', error: err.message });
 });
 
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+  console.log('Cloudinary configurado:', process.env.CLOUDINARY_CLOUD_NAME ? 'Sim' : 'Não');
 });

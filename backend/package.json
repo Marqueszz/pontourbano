@@ -12,21 +12,21 @@
   "license": "ISC",
   "description": "API para o Mapa de Problemas Urbanos",
   "dependencies": {
-    "bcryptjs": "file:bcryptjs-2.4.3.tgz",
+    "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
-    "cookie": "file:cookie-0.7.2.tgz",
-    "cookie-signature": "file:cookie-signature-1.0.7.tgz",
+    "cloudinary": "^1.40.0",
+    "cookie": "^0.7.2",
+    "cookie-signature": "^1.0.7",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "express-session": "file:express-session-1.18.1.tgz",
+    "express-session": "^1.18.1",
     "multer": "^2.0.2",
-    "mysql2": "^3.14.3",
     "nodemailer": "^7.0.6",
-    "on-headers": "file:on-headers-1.0.2.tgz",
+    "on-headers": "^1.0.2",
     "pg": "^8.16.3",
-    "random-bytes": "file:random-bytes-1.0.0.tgz",
-    "uid-safe": "file:uid-safe-2.1.5.tgz"
+    "random-bytes": "^1.0.0",
+    "uid-safe": "^2.1.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
