@@ -173,6 +173,14 @@
             font-size: 0.9rem;
         }
 
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary-light);
+        }
+
         .settings-btn {
             background: var(--primary);
             color: white;
@@ -285,6 +293,52 @@
         .profile-item i {
             color: var(--primary);
             width: 16px;
+        }
+
+        /* Estilos para foto de perfil no modal */
+        .profile-photo-container {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .profile-photo-container img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+        }
+
+        #changePhotoBtn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        #changePhotoBtn:hover {
+            background: var(--primary-dark);
+        }
+
+        #saveProfileBtn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        #saveProfileBtn:hover {
+            background: #2e7d32;
         }
 
         .action-buttons {
@@ -725,8 +779,7 @@
             </div>
             <div class="user-menu">
                 <div class="user-info">
-                    <i class="fas fa-user"></i>
-                    <span id="userName">Usuário</span>
+                    <img id="userAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNjQwIj48cGF0aCBmaWxsPSIjMWE3M2U4IiBkPSJNMzIwIDMxMkMzODYuMyAzMTIgNDQwIDI1OC4zIDQ0MCAxOTJDNDQwIDEyNS43IDM4Ni4zIDcyIDMyMCA3MkMyNTMuNyA3MiAyMDAgMTI1LjcgMjAwIDE5MkMyMDAgMjU4LjMgMjUzLjcgMzEyIDMyMCAzMTJ6TTI5MC4zIDM2OEMxOTEuOCAzNjggMTEyIDQ0Ny44IDExMiA1NDYuM0MxMTIgNTYyLjcgMTI1LjMgNTc2IDE0MS43IDU3Nkw0OTguMyA1NzZDNTE0LjcgNTc2IDUyOCA1NjIuNyA1MjggNTQ2LjNDNTI4IDQ0Ny44IDQ0OC4yIDM2OCAzNDkuNyAzNjhMMjkwLjMgMzY4eiIvPjwvc3ZnPg==" alt="Avatar" class="user-avatar">                    <span id="userName">Usuário</span>
                 </div>
                 <button class="settings-btn" id="settingsBtn">
                     <i class="fas fa-cog"></i>
@@ -845,15 +898,20 @@
                 <div class="profile-section">
                     <h3><i class="fas fa-user"></i> Perfil do Usuário</h3>
                     <div class="profile-info">
+                        <div class="profile-photo-container">
+                            <img id="profilePhoto" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNjQwIj48cGF0aCBmaWxsPSIjMWE3M2U4IiBkPSJNMzIwIDMxMkMzODYuMyAzMTIgNDQwIDI1OC4zIDQ0MCAxOTJDNDQwIDEyNS43IDM4Ni4zIDcyIDMyMCA3MkMyNTMuNyA3MiAyMDAgMTI1LjcgMjAwIDE5MkMyMDAgMjU4LjMgMjUzLjcgMzEyIDMyMCAzMTJ6TTI5MC4zIDM2OEMxOTEuOCAzNjggMTEyIDQ0Ny44IDExMiA1NDYuM0MxMTIgNTYyLjcgMTI1LjMgNTc2IDE0MS43IDU3Nkw0OTguMyA1NzZDNTE0LjcgNTc2IDUyOCA1NjIuNyA1MjggNTQ2LjNDNTI4IDQ0Ny44IDQ0OC4yIDM2OCAzNDkuNyAzNjhMMjkwLjMgMzY4eiIvPjwvc3ZnPg==" alt="Foto de perfil">                            <input type="file" id="fotoPerfilInput" accept="image/*" style="display: none;">
+                            <button type="button" id="changePhotoBtn">Alterar Foto</button>
+                        </div>
                         <div class="profile-item">
                             <i class="fas fa-user"></i>
-                            <span id="profileName">Nome do Usuário</span>
+                            <input type="text" id="profileNameInput" value="Nome do Usuário" style="border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; width: 100%;">
                         </div>
                         <div class="profile-item">
                             <i class="fas fa-envelope"></i>
                             <span id="profileEmail">email@exemplo.com</span>
                         </div>
                     </div>
+                    <button id="saveProfileBtn">Salvar Alterações</button>
                 </div>
                 
                 <div class="action-buttons">
@@ -883,6 +941,12 @@
                     document.getElementById('userName').textContent = userData.nome;
                     document.getElementById('profileName').textContent = userData.nome;
                     document.getElementById('profileEmail').textContent = userData.email || 'email@exemplo.com';
+                    
+                    // Se houver foto de perfil, carregá-la
+                    if (userData.foto_perfil) {
+                        document.getElementById('userAvatar').src = userData.foto_perfil;
+                        document.getElementById('profilePhoto').src = userData.foto_perfil;
+                    }
                 }
         
                 // Definir limites do mundo inteiro
@@ -997,6 +1061,13 @@
                                             <span>${p.categoria.replace('_', ' ')}</span>
                                             <span>${dataFormatada}</span>
                                         </div>
+                                        ${p.usuario_nome ? `
+                                        <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px;">
+                                            <img src="${p.usuario_foto_perfil || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNjQwIj48cGF0aCBmaWxsPSIjMWE3M2U4IiBkPSJNMzIwIDMxMkMzODYuMyAzMTIgNDQwIDI1OC4zIDQ0MCAxOTJDNDQwIDEyNS43IDM4Ni4zIDcyIDMyMCA3MkMyNTMuNyA3MiAyMDAgMTI1LjcgMjAwIDE5MkMyMDAgMjU4LjMgMjUzLjcgMzEyIDMyMCAzMTJ6TTI5MC4zIDM2OEMxOTEuOCAzNjggMTEyIDQ0Ny44IDExMiA1NDYuM0MxMTIgNTYyLjcgMTI1LjMgNTc2IDE0MS43IDU3Nkw0OTguMyA1NzZDNTE0LjcgNTc2IDUyOCA1NjIuNyA1MjggNTQ2LjNDNTI4IDQ0Ny44IDQ0OC4yIDM2OCAzNDkuNyAzNjhMMjkwLjMgMzY4eiIvPjwvc3ZnPg=='}" 
+                                                 style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                                            <span style="font-size: 0.9rem; color: #5f6368;">Reportado por: ${p.usuario_nome}</span>
+                                        </div>
+                                        ` : ''}
                                         ${p.foto ? `
                                         <div style="margin-top:12px; text-align:center;">
                                             <img src="${p.foto}" 
@@ -1100,6 +1171,19 @@
                 const closeModal = document.getElementById('closeModal');
         
                 settingsBtn.addEventListener('click', () => {
+                    // Atualizar os campos do perfil com os dados atuais
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    document.getElementById('profileNameInput').value = userData.nome || '';
+                    document.getElementById('profileEmail').textContent = userData.email || 'email@exemplo.com';
+                    
+                    // Se houver foto de perfil, carregá-la
+                    if (userData.foto_perfil) {
+                        document.getElementById('profilePhoto').src = userData.foto_perfil;
+                    } else {
+                        // Usar uma imagem padrão
+                        document.getElementById('profilePhoto').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iNDAiIGN5PSI0MCIgcj0iNDAiIGZpbGw9IiMxYTczZTgiLz4KPHBhdGggZD0iTTQwIDQ0QzQ0LjQxODMgNDQgNDggNDAuNDE4MyA0OCAzNkM0OCAzMS41ODE3IDQ0LjQxODMgMjggNDAgMjhDMzUuNTgxNyAyOCAzMiAzMS41ODE3IDMyIDM2QzMyIDQwLjQxODMgMzUuNTgxNyA0NCA0MCA0NFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik00MCA0NEM1MC44MDkyIDQ0IDU5LjUgMzUuMzA5MiA1OS41IDI0LjVDNTkuNSAxMy42OTA4IDUwLjgwOTIgNSA0MCA1QzM5LjM5NTQgNSAzOC44MDkyIDUuMDgzMzMgMzguMjM3NSA1LjI1QzM2LjA4MzMgNS43NSAzNC4xMjUgNi43MDgzMyAzMi40Mzc1IDguMDQxNjdDMzAuNzUgOS4zNzUgMjkuMzc1IDExLjA4MzMgMjguMzEyNSAxMy4wNDE3QzI3LjI1IDE1IDI2LjU0MTcgMTcuMTY2NyAyNi4yMDgzIDE5LjQxNjdDMjUuODc1IDIxLjY2NjcgMjUuOTE2NyAyMy45NTgzIDI2LjMzMzMgMjYuMTY2N0MyNi43NSAyOC4zNzUgMjcuNTQxNyAzMC40NTgzIDI4LjY2NjcgMzIuMzMzM0MyOS43OTE3IDM0LjIwODMgMzEuMjI5MiAzNS44MzMzIDMyLjkxNjcgMzcuMTI1QzM0LjYwNDIgMzguNDE2NyAzNi41IDM5LjMzMzMgMzguNTQxNyAzOS44MzMzQzQwLjU4MzMgNDAuMzMzMyA0Mi43MjkyIDQwLjQxNjcgNDQuODA4MyA0MC4wODMzQzQ2Ljg4NzUgMzkuNzUgNDguODU0MiAzOS4wMDgzIDUwLjYyNSAzNy44NzVDNTIuMzk1OCAzNi43NDE3IDUzLjkxNjcgMzUuMjUgNTUuMDgzMyAzMy40NzkyQzU2LjI1IDMxLjcwODMgNTcuMDQxNyAyOS43MDgzIDU3LjQxNjcgMjcuNTgzM0M1Ny43OTE3IDI1LjQ1ODMgNTcuNzUgMjMuMjcwOCA1Ny4yOTE3IDIxLjE2NjdDNTYuODMzMyAxOS4wNjI1IDU1Ljk3OTIgMTcuMDgzMyA1NC43NzA4IDE1LjMxMjVDNTMuNTYyNSAxMy41NDE3IDUyLjAyMDggMTIuMDEwNCA1MC4yMDgzIDEwLjc3MDhDNDguMzk1OCA5LjUzMTI1IDQ2LjM0MzcgOC42MDQxNyA0NC4xNDU4IDguMDMxMjVDNDEuOTQ3OSA3LjQ1ODMzIDM5LjY0NTggNy4yNSAzNy4zMzMzIDcuNDE2NjdDMzUuMDIwOCA3LjU4MzMzIDMyLjcyOTEgOC4xMjQ5OSAzMC41NjI1IDkuMDIwODNDMjguMzk1OCA5LjkxNjY2IDI2LjQwNjIgMTEuMTU2MiAyNC42NjY3IDEyLjY4NzVDMjIuOTI3MSAxNC4yMTg4IDIxLjQ3MDggMTYuMDE1NiAyMC4zNTQyIDE4LjAwNDJDMTkuMjM3NSAxOS45OTI3IDE4LjQ3OTIgMjIuMTQ1OCAxOC4xMjUgMjQuMzcwOEMxNy43NzEgMjYuNTk1OCAxNy44MjkyIDI4Ljg1NjIgMTguMjkxNyAzMS4wNjI1QzE4Ljc1NDIgMzMuMjY4OCAxOS42MTQ2IDM1LjM3NSAyMC44MzMzIDM3LjI5MTdDMjIuMDUyMSAzOS4yMDgzIDIzLjYwNDIgNDAuODk1OCAyNS40MTY3IDQyLjI3MDhDMjcuMjI5MiA0My42NDU4IDI5LjI3MDggNDQuNjc3MSAzMS40NTgzIDQ1LjMxMjVDMzMuNjQ1OCA0NS45NDc5IDM1LjkzNzUgNDYuMTc3MSAzOC4yMjkyIDQ1Ljk4OTZDNDAuNTIwOCA0NS44MDIxIDQyLjc2MDQgNDUuMjA4MyA0NC44NzUgNDQuMjM5NkM0Ni45ODk2IDQzLjI3MDggNDguOTI3MSA0MS45NDc5IDUwLjU4MzMgNDAuMzIyOUM1Mi4yMzk2IDM4LjY5NzkgNTMuNTcyOSAzNi43OTY5IDU0LjUyMDggMzQuNjk3OUM1NS40Njg4IDMyLjU5OSA1NiAzMC4zMzg1IDU2IDI4QzU2IDI1LjggNTUuNCAyMy42NjY3IDU0LjIgMjEuNkM1MyAxOS41MzMzIDUxLjI2NjcgMTcuOCA0OSAxNi41QzQ2LjczMzMgMTUuMiA0My45MzMzIDE0LjUgNDAuNSAxNC41QzM3LjA2NjcgMTQuNSAzNC4yNjY3IDE1LjIgMzIgMTYuNUMzMC43NjY3IDE3LjggMjkgMTkuOTMzMyAyNy44IDIyLjZDMjYuNiAyNS4yNjY3IDI2IDI4LjA2NjcgMjYgMzEuMkMyNiAzNC4zMzMzIDI2LjczMzMgMzcuMTMzMyAyOC4yIDM5LjZDMjkuNjY2NyA0Mi4wNjY3IDMxLjggNDQuMTMzMyAzNC42IDQ1LjhDMzcuNCA0Ny40NjY3IDQwLjY2NjcgNDguMzMzMyA0NC4zIDQ4LjVDNDcuOTMzMyA0OC42NjY3IDUxLjA2NjcgNDguMDY2NyA1My43IDQ2LjdDNTYuMzMzMyA0NS4zMzMzIDU4LjMzMzMgNDMuMzMzMyA1OS43IDQwLjdDNjEuMDY2NyAzOC4wNjY3IDYxLjc1IDM1LjA2NjcgNjEuNzUgMzEuN0M2MS43NSAyOC4zMzMzIDYxLjA2NjcgMjUuMzMzMyA1OS43IDIyLjdDNTguMzMzMyAyMC4wNjY3IDU2LjMzMzMgMTguMDY2NyA1My43IDE2LjdDNTEuMDY2NyAxNS4zMzMzIDQ3LjkzMzMgMTQuNzMzMyA0NC4zIDE0LjlDNDAuNjY2NyAxNS4wNjY3IDM3LjQ2NjcgMTUuOTMzMyAzNC43IDE3LjZDMzEuOTMzMyAxOS4yNjY3IDI5LjggMjEuNDY2NyAyOC4zMjI5IDI0LjJDMjYuODQ1OCAyNi45MzMzIDI2LjEwNDIgMzAuMDMzMyAyNi4wOTc5IDMzLjZDMjYuMDkxNyAzNy4xNjY3IDI2LjgyMDggNDAuMzA0MiAyOC4yODEzIDQzLjAxMjVDMjkuNzQxNyA0NS43MjA4IDMxLjgwODMgNDcuOTA2MiAzNC40ODEzIDQ5LjU3MDlDMzcuMTU0MiA1MS4yMzU0IDQwLjI5MTcgNTIuMDYyNSA0My44OTU4IDUyLjA2MjVDNDcuNDk5OSA1Mi4wNjI1IDUwLjY2NjcgNTEuMjM1NCA1My4zOTU4IDQ5LjU3MDlDNTYuMTI1IDQ3LjkwNjIgNTguMjI5MSA0NS43MjA4IDU5LjY4NzUgNDMuMDEyNUM2MS4xNDU4IDQwLjMwNDIgNjEuODc1IDM3LjE2NjcgNjEuODc1IDMzLjZDNjEuODc1IDMwLjAzMzMgNjEuMTQ1OCAyNi44OTU4IDU5LjY4NzUgMjQuMTg3NUM1OC4yMjkxIDIxLjQ3OTIgNTYuMTI1IDE5LjI5MTcgNTMuMzk1OCAxNy42MjVMNTMuMzk1OCAxNy42MjVaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
+                    }
+                    
                     settingsModal.style.display = 'block';
                 });
         
@@ -1111,6 +1195,71 @@
                 window.addEventListener('click', (e) => {
                     if (e.target === settingsModal) {
                         settingsModal.style.display = 'none';
+                    }
+                });
+        
+                // Elementos do modal de perfil
+                const profilePhoto = document.getElementById('profilePhoto');
+                const changePhotoBtn = document.getElementById('changePhotoBtn');
+                const fotoPerfilInput = document.getElementById('fotoPerfilInput');
+                const profileNameInput = document.getElementById('profileNameInput');
+                const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+                // Alterar foto de perfil
+                changePhotoBtn.addEventListener('click', () => {
+                    fotoPerfilInput.click();
+                });
+
+                fotoPerfilInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            profilePhoto.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+
+                // Salvar perfil
+                saveProfileBtn.addEventListener('click', async () => {
+                    const formData = new FormData();
+                    formData.append('nome', profileNameInput.value);
+                    
+                    const file = fotoPerfilInput.files[0];
+                    if (file) {
+                        formData.append('foto_perfil', file);
+                    }
+                    
+                    try {
+                        const response = await fetch('https://pontourbano.onrender.com/perfil', {
+                            method: 'PUT',
+                            body: formData,
+                            credentials: 'include'
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            showNotification('Perfil atualizado com sucesso!', 'success');
+                            
+                            // Atualizar localStorage
+                            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                            userData.nome = result.user.nome;
+                            if (result.user.foto_perfil) {
+                                userData.foto_perfil = result.user.foto_perfil;
+                            }
+                            localStorage.setItem('userData', JSON.stringify(userData));
+                            
+                            // Atualizar a barra de navegação
+                            document.getElementById('userName').textContent = userData.nome;
+                            document.getElementById('userAvatar').src = userData.foto_perfil || document.getElementById('userAvatar').src;
+                        } else {
+                            showNotification(result.message, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Erro ao atualizar perfil:', error);
+                        showNotification('Erro ao atualizar perfil', 'error');
                     }
                 });
         
@@ -1147,7 +1296,8 @@
                     try {
                         const response = await fetch('https://pontourbano.onrender.com/problemas', {
                             method: 'POST',
-                            body: formData
+                            body: formData,
+                            credentials: 'include'
                         });
                             
                         const result = await response.json();
@@ -1222,5 +1372,5 @@
             }
         });
     </script>
-        </body>
+</body>
 </html>

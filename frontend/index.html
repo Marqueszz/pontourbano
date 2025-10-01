@@ -220,6 +220,61 @@
             color: var(--error); 
             border-left: 4px solid var(--error);
         }
+
+        /* Estilização personalizada para o input de arquivo */
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+            border-radius: 8px;
+        }
+        
+        .file-input-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s, transform 0.2s;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .file-input-button:hover {
+            background: var(--primary-dark);
+        }
+        
+        .file-input-button:active {
+            transform: scale(0.98);
+        }
+        
+        .file-input-container input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-name {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            text-align: center;
+            padding: 4px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -245,6 +300,17 @@
                 <div class="form-group">
                     <label for="senha"><i class="fas fa-lock"></i> Senha</label>
                     <input type="password" id="senha" placeholder="Crie uma senha segura" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="foto_perfil"><i class="fas fa-camera"></i> Foto de Perfil (opcional)</label>
+                    <div class="file-input-container">
+                        <button type="button" class="file-input-button">
+                            <i class="fas fa-upload"></i> Escolher foto
+                        </button>
+                        <input type="file" id="foto_perfil" accept="image/*">
+                    </div>
+                    <div id="fotoPerfilName" class="file-name">Nenhum arquivo escolhido</div>
                 </div>
                 
                 <button type="submit"><i class="fas fa-user-plus"></i> Criar Conta</button>
@@ -275,10 +341,11 @@
             const nome = document.getElementById('nome').value;
             const email = document.getElementById('email').value;
             const senha = document.getElementById('senha').value;
+            const fotoPerfilInput = document.getElementById('foto_perfil');
             
             // Validação básica
             if (!nome || !email || !senha) {
-                showNotification('Por favor, preencha todos os campos', 'error');
+                showNotification('Por favor, preencha todos os campos obrigatórios', 'error');
                 return;
             }
             
@@ -288,12 +355,18 @@
             }
             
             try {
+                const formData = new FormData();
+                formData.append('nome', nome);
+                formData.append('email', email);
+                formData.append('senha', senha);
+                
+                if (fotoPerfilInput.files[0]) {
+                    formData.append('foto_perfil', fotoPerfilInput.files[0]);
+                }
+                
                 const response = await fetch('https://pontourbano.onrender.com/cadastro', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ nome, email, senha })
+                    body: formData
                 });
                 
                 const result = await response.json();
@@ -301,7 +374,6 @@
                 if (result.success) {
                     showNotification('Cadastro realizado com sucesso! Redirecionando...', 'success');
                     
-                    // Redirecionar após cadastro bem-sucedido
                     setTimeout(() => {
                         window.location.href = 'login.html';
                     }, 2000);
@@ -314,40 +386,45 @@
             }
         });
 
-            
-            // Função para mostrar notificação
-            function showNotification(message, type = 'success') {
-                const notification = document.getElementById('notification');
-                const notificationText = document.getElementById('notificationText');
-                
-                notificationText.textContent = message;
-                notification.className = 'notification'; // Reseta as classes
-                
-                // Adiciona classes baseadas no tipo
-                notification.classList.add(type);
-                notification.classList.add('visible');
-                
-                // Ícone baseado no tipo
-                let iconClass;
-                switch(type) {
-                    case 'success':
-                        iconClass = 'fas fa-check-circle';
-                        break;
-                    case 'error':
-                        iconClass = 'fas fa-exclamation-circle';
-                        break;
-                    default:
-                        iconClass = 'fas fa-info-circle';
-                }
-                
-                notification.innerHTML = `<i class="${iconClass}"></i> <span id="notificationText">${message}</span>`;
-                
-                // Esconde a notificação após 5 segundos
-                setTimeout(() => {
-                    notification.classList.remove('visible');
-                }, 4000);
-            }
+        // Script para mostrar o nome do arquivo da foto de perfil
+        document.getElementById('foto_perfil').addEventListener('change', function(e) {
+            const fileName = this.files[0] ? this.files[0].name : 'Nenhum arquivo escolhido';
+            document.getElementById('fotoPerfilName').textContent = fileName;
         });
-    </script>
+            
+        // Função para mostrar notificação
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            notificationText.textContent = message;
+            notification.className = 'notification'; // Reseta as classes
+            
+            // Adiciona classes baseadas no tipo
+            notification.classList.add(type);
+            notification.classList.add('visible');
+            
+            // Ícone baseado no tipo
+            let iconClass;
+            switch(type) {
+                case 'success':
+                    iconClass = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                    iconClass = 'fas fa-exclamation-circle';
+                    break;
+                default:
+                    iconClass = 'fas fa-info-circle';
+            }
+            
+            notification.innerHTML = `<i class="${iconClass}"></i> <span id="notificationText">${message}</span>`;
+            
+            // Esconde a notificação após 5 segundos
+            setTimeout(() => {
+                notification.classList.remove('visible');
+            }, 4000);
+        }
+    });
+</script>
 </body>
 </html>
