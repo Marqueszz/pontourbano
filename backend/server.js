@@ -60,10 +60,46 @@ async function initDatabase() {
       )
     `);
 
+    // Verificar e adicionar colunas faltantes se necessário
+    await addMissingColumns(client);
+
     client.release();
   } catch (error) {
     console.error('Erro ao conectar ao PostgreSQL:', error);
     process.exit(1);
+  }
+}
+
+// Função para adicionar colunas faltantes
+async function addMissingColumns(client) {
+  try {
+    // Verificar se a coluna foto_perfil existe na tabela usuarios
+    const checkUsuarioColumn = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'usuarios' AND column_name = 'foto_perfil'
+    `);
+
+    if (checkUsuarioColumn.rows.length === 0) {
+      console.log('Adicionando coluna foto_perfil à tabela usuarios');
+      await client.query('ALTER TABLE usuarios ADD COLUMN foto_perfil VARCHAR(500)');
+    }
+
+    // Verificar se a coluna foto existe na tabela problemas
+    const checkProblemaColumn = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'problemas' AND column_name = 'foto'
+    `);
+
+    if (checkProblemaColumn.rows.length === 0) {
+      console.log('Adicionando coluna foto à tabela problemas');
+      await client.query('ALTER TABLE problemas ADD COLUMN foto VARCHAR(500)');
+    }
+
+    console.log('Verificação de colunas concluída');
+  } catch (error) {
+    console.error('Erro ao verificar/adicionar colunas:', error);
   }
 }
 
