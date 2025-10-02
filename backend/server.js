@@ -124,7 +124,18 @@ async function addMissingColumns(client) {
 
 }// Middleware
 app.use(cors({
-  origin: 'https://pontourbano.onrender.com',
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://pontourbano.onrender.com',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ];
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 

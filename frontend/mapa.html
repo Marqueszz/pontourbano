@@ -946,9 +946,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     
     <script>
-        // Função para verificar autenticação
-
-// Função para verificar autenticação (usa apenas o backend)
+// Função para verificar autenticação
 async function checkAuth() {
   try {
     const response = await fetch('https://pontourbano.onrender.com/auth/check', {
@@ -961,7 +959,7 @@ async function checkAuth() {
     const result = await response.json();
     if (result.authenticated) {
       if (result.user) {
-        localStorage.setItem('userData', JSON.stringify(result.user)); // descomente se quiser cache local
+        localStorage.setItem('userData', JSON.stringify(result.user));
       }
       return true;
     } else {
@@ -1111,9 +1109,14 @@ async function checkAuth() {
         
                 map.addLayer(markers);
         
-                // Carrega problemas existentes do backend
+                // Carrega problemas existentes do backend 
                 try {
                     const response = await fetch('https://pontourbano.onrender.com/problemas');
+                    
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+                    }
+                    
                     const dados = await response.json();
                         
                     document.getElementById('problemaCount').textContent = 
@@ -1123,20 +1126,31 @@ async function checkAuth() {
                         if (p.latitude && p.longitude) {
                             const icone = icones[p.categoria] || icones.outros;
                             const dataFormatada = new Date(p.data).toLocaleDateString('pt-BR');
+                            
+                            // Função de escape para prevenir XSS
+                            const escapeHtml = (unsafe) => {
+                                return unsafe
+                                    .replace(/&/g, "&amp;")
+                                    .replace(/</g, "&lt;")
+                                    .replace(/>/g, "&gt;")
+                                    .replace(/"/g, "&quot;")
+                                    .replace(/'/g, "&#039;");
+                            };
+                            
                             const marker = L.marker([p.latitude, p.longitude], { icon: icone })
                                 .bindPopup(`
                                     <div style="min-width: 250px;">
-                                        <h3 style="margin: 0 0 8px 0; color: #1a73e8;">${p.tipo}</h3>
-                                        <p style="margin: 0 0 12px 0;">${p.descricao}</p>
+                                        <h3 style="margin: 0 0 8px 0; color: #1a73e8;">${escapeHtml(p.tipo)}</h3>
+                                        <p style="margin: 0 0 12px 0;">${escapeHtml(p.descricao)}</p>
                                         <div style="display: flex; justify-content: space-between; color: #5f6368; font-size: 0.9rem;">
-                                            <span>${p.categoria.replace('_', ' ')}</span>
+                                            <span>${escapeHtml(p.categoria.replace('_', ' '))}</span>
                                             <span>${dataFormatada}</span>
                                         </div>
                                         ${p.usuario_nome ? `
                                         <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px;">
                                             <img src="${p.usuario_foto_perfil || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNjQwIj48cGF0aCBmaWxsPSIjMWE3M2U4IiBkPSJNMzIwIDMxMkMzODYuMyAzMTIgNDQwIDI1OC4zIDQ0MCAxOTJDNDQwIDEyNS43IDM4Ni4zIDcyIDMyMCA3MkMyNTMuNyA3MiAyMDAgMTI1LjcgMjAwIDE5MkMyMDAgMjU4LjMgMjUzLjcgMzEyIDMyMCAzMTJ6TTI5MC4zIDM2OEMxOTEuOCAzNjggMTEyIDQ0Ny44IDExMiA1NDYuM0MxMTIgNTYyLjcgMTI1LjMgNTc2IDE0MS43IDU3Nkw0OTguMyA1NzZDNTE0LjcgNTc2IDUyOCA1NjIuNyA1MjggNTQ2LjNDNTI4IDQ0Ny44IDQ0OC4yIDM2OCAzNDkuNyAzNjhMMjkwLjMgMzY4eiIvPjwvc3ZnPg=='}" 
                                                  style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
-                                            <span style="font-size: 0.9rem; color: #5f6368;">Reportado por: ${p.usuario_nome}</span>
+                                            <span style="font-size: 0.9rem; color: #5f6368;">Reportado por: ${escapeHtml(p.usuario_nome)}</span>
                                         </div>
                                         ` : ''}
                                         ${p.foto ? `
@@ -1145,7 +1159,8 @@ async function checkAuth() {
                                                 style="max-width:100%; max-height:150px; 
                                                     display:block; margin:0 auto;
                                                     border-radius:6px;
-                                                    object-fit:contain;">
+                                                    object-fit:contain;"
+                                                onerror="this.style.display='none'">
                                         </div>
                                         ` : ''}
                                     </div>
@@ -1156,16 +1171,23 @@ async function checkAuth() {
                     });
                 } catch (error) {
                     console.error('Erro ao carregar problemas:', error);
-                    showNotification('Erro ao carregar problemas do servidor', 'error');
-                }
-        
-                // Funcionalidade de pesquisa de endereços
+                    showNotification('Erro ao carregar problemas. Tente recarregar a página.', 'error');
+                    document.getElementById('problemaCount').textContent = 'Erro ao carregar problemas';
+                }        
+                // Funcionalidade de pesquisa de endereços COM ABORT CONTROLLER
                 let searchTimeout;
+                let searchController = null; // Novo: controller para cancelar requisições
+                
                 const searchInput = document.getElementById('searchInput');
                 const searchResults = document.getElementById('searchResults');
         
                 searchInput.addEventListener('input', function() {
                     const query = this.value.trim();
+                    
+                    // Cancelar requisição anterior se existir
+                    if (searchController) {
+                        searchController.abort();
+                    }
                     
                     clearTimeout(searchTimeout);
                     
@@ -1176,17 +1198,36 @@ async function checkAuth() {
         
                     searchTimeout = setTimeout(async () => {
                         try {
+                            // Criar novo AbortController para esta requisição
+                            searchController = new AbortController();
+                            
                             // Usando Nominatim API para geocodificação
-                            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`);
+                            const response = await fetch(
+                                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
+                                { signal: searchController.signal } // Associar signal para poder cancelar
+                            );
+                            
+                            // Verificar se a requisição foi cancelada
+                            if (searchController.signal.aborted) {
+                                return;
+                            }
+                            
                             const results = await response.json();
                             
-                            displaySearchResults(results);
+                            // Verificar novamente se não foi cancelada durante o parse
+                            if (!searchController.signal.aborted) {
+                                displaySearchResults(results);
+                            }
                         } catch (error) {
-                            console.error('Erro na pesquisa:', error);
+                            // Ignorar erros de cancelamento
+                            if (error.name !== 'AbortError') {
+                                console.error('Erro na pesquisa:', error);
+                                showNotification('Erro na pesquisa de endereços', 'error');
+                            }
                         }
                     }, 300);
                 });
-        
+
                 function displaySearchResults(results) {
                     searchResults.innerHTML = '';
                     
@@ -1296,13 +1337,43 @@ async function checkAuth() {
                     }
                 });
 
-                // Salvar perfil
+                // Salvar perfil COM CONTROLE DE CONCURRÊNCIA
+                let isSavingProfile = false;
+                
                 saveProfileBtn.addEventListener('click', async () => {
+                    // Prevenir múltiplos cliques simultâneos
+                    if (isSavingProfile) {
+                        showNotification('Aguarde, salvando perfil...', 'info');
+                        return;
+                    }
+                    
+                    isSavingProfile = true;
+                    saveProfileBtn.disabled = true;
+                    saveProfileBtn.textContent = 'Salvando...';
+                    
                     const formData = new FormData();
                     formData.append('nome', profileNameInput.value);
                     
                     const file = fotoPerfilInput.files[0];
                     if (file) {
+
+                        // Aplicar validações das imagens
+                        if (!file.type.startsWith('image/')) {
+                            showNotification('Por favor, selecione apenas imagens', 'error');
+                            isSavingProfile = false;
+                            saveProfileBtn.disabled = false;
+                            saveProfileBtn.textContent = 'Salvar Alterações';
+                            return;
+                        }
+                        
+                        if (file.size > 5 * 1024 * 1024) {
+                            showNotification('A imagem deve ter no máximo 5MB', 'error');
+                            isSavingProfile = false;
+                            saveProfileBtn.disabled = false;
+                            saveProfileBtn.textContent = 'Salvar Alterações';
+                            return;
+                        }
+                        
                         formData.append('foto_perfil', file);
                     }
                     
@@ -1334,17 +1405,32 @@ async function checkAuth() {
                         }
                     } catch (error) {
                         console.error('Erro ao atualizar perfil:', error);
-                        showNotification('Erro ao atualizar perfil', 'error');
+                        showNotification('Erro ao atualizar perfil: ' + error.message, 'error');
+                    } finally {
+                        // Reativar o botão independente do resultado
+                        isSavingProfile = false;
+                        saveProfileBtn.disabled = false;
+                        saveProfileBtn.textContent = 'Salvar Alterações';
                     }
-                });
-        
-                // Logout
-                document.getElementById('logoutBtn').addEventListener('click', () => {
-                    if (confirm('Tem certeza que deseja fazer logout?')) {
-                        localStorage.removeItem('userData');
-                        window.location.href = 'login.html';
-                    }
-                });
+                });        
+            // Logout 
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                if (!confirm('Tem certeza que deseja fazer logout?')) return;
+                
+                try {
+                    // Fazer logout no servidor
+                    await fetch('https://pontourbano.onrender.com/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                } catch (e) {
+                    console.warn('Erro no logout do servidor:', e);
+                }
+                
+                // Limpar dados locais
+                localStorage.removeItem('userData');
+                window.location.href = 'login.html';
+            });
         
                 // Adicionar evento de submit ao formulário de problemas
                 document.getElementById('problemaForm').addEventListener('submit', async function(e) {
@@ -1452,20 +1538,6 @@ async function checkAuth() {
                     console.error('Erro crítico na inicialização:', error);
                     showNotification('Erro crítico: ' + error.message, 'error');
                 }
-            });
-                localStorage
-            document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-            if (!confirm('Tem certeza que deseja fazer logout?')) return;
-            try {
-                await fetch('https://pontourbano.onrender.com/logout', {
-                method: 'POST',
-                credentials: 'include'
-                });
-            } catch (e) {
-                console.warn('Logout: falha ao contatar servidor', e);
-            }
-            try { localStorage.removeItem('userData'); } catch(e) {}
-            window.location.href = 'login.html';
             });
     </script>
 </body>

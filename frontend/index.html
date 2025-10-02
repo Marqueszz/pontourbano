@@ -386,12 +386,32 @@
             }
         });
 
-        // Script para mostrar o nome do arquivo da foto de perfil
+        // Script para mostrar o nome do arquivo da foto de perfil 
         document.getElementById('foto_perfil').addEventListener('change', function(e) {
-            const fileName = this.files[0] ? this.files[0].name : 'Nenhum arquivo escolhido';
-            document.getElementById('fotoPerfilName').textContent = fileName;
+            const file = this.files[0];
+            if (file) {
+                // Validação de tipo
+                if (!file.type.startsWith('image/')) {
+                    showNotification('Por favor, selecione apenas arquivos de imagem (JPG, PNG, etc.)', 'error');
+                    this.value = '';
+                    document.getElementById('fotoPerfilName').textContent = 'Nenhum arquivo escolhido';
+                    return;
+                }
+                
+                // Validação de tamanho (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('A imagem deve ter no máximo 5MB', 'error');
+                    this.value = '';
+                    document.getElementById('fotoPerfilName').textContent = 'Nenhum arquivo escolhido';
+                    return;
+                }
+                
+                document.getElementById('fotoPerfilName').textContent = file.name;
+            } else {
+                document.getElementById('fotoPerfilName').textContent = 'Nenhum arquivo escolhido';
+            }
         });
-            
+
         // Função para mostrar notificação
         function showNotification(message, type = 'success') {
             const notification = document.getElementById('notification');
