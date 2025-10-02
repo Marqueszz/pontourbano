@@ -33,14 +33,14 @@ async function initDatabase() {
     const client = await pool.connect();
     console.log('Conexão com PostgreSQL estabelecida com sucesso!');
 
-    // Criar tabelas se não existirem
+    // Criar tabelas se não existirem 
     await client.query(`
       CREATE TABLE IF NOT EXISTS usuarios (
         id SERIAL PRIMARY KEY,
         nome VARCHAR(100) NOT NULL,
         email VARCHAR(100) NOT NULL UNIQUE,
         senha VARCHAR(255) NOT NULL,
-        foto_perfil VARCHAR(500),
+        foto_perfil TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -54,13 +54,13 @@ async function initDatabase() {
         latitude NUMERIC(10, 8) NOT NULL,
         longitude NUMERIC(11, 8) NOT NULL,
         categoria VARCHAR(50) NOT NULL,
-        foto VARCHAR(500),
+        foto TEXT,
         usuario_id INTEGER REFERENCES usuarios(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Verificar e adicionar colunas faltantes se necessário
+    // Verificar e adicionar/alterar colunas faltantes se necessário
     await addMissingColumns(client);
 
     client.release();
@@ -75,26 +75,34 @@ async function addMissingColumns(client) {
   try {
     // Verificar se a coluna foto_perfil existe na tabela usuarios
     const checkUsuarioColumn = await client.query(`
-      SELECT column_name 
+      SELECT column_name, data_type 
       FROM information_schema.columns 
       WHERE table_name = 'usuarios' AND column_name = 'foto_perfil'
     `);
 
     if (checkUsuarioColumn.rows.length === 0) {
       console.log('Adicionando coluna foto_perfil à tabela usuarios');
-      await client.query('ALTER TABLE usuarios ADD COLUMN foto_perfil VARCHAR(500)');
+      await client.query('ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT');
+    } else if (checkUsuarioColumn.rows[0].data_type === 'character varying') {
+      // Se já existe como VARCHAR, alterar para TEXT
+      console.log('Alterando coluna foto_perfil de VARCHAR para TEXT');
+      await client.query('ALTER TABLE usuarios ALTER COLUMN foto_perfil TYPE TEXT');
     }
 
     // Verificar se a coluna foto existe na tabela problemas
     const checkProblemaColumn = await client.query(`
-      SELECT column_name 
+      SELECT column_name, data_type 
       FROM information_schema.columns 
       WHERE table_name = 'problemas' AND column_name = 'foto'
     `);
 
     if (checkProblemaColumn.rows.length === 0) {
       console.log('Adicionando coluna foto à tabela problemas');
-      await client.query('ALTER TABLE problemas ADD COLUMN foto VARCHAR(500)');
+      await client.query('ALTER TABLE problemas ADD COLUMN foto TEXT');
+    } else if (checkProblemaColumn.rows[0].data_type === 'character varying') {
+      // Se já existe como VARCHAR, alterar para TEXT
+      console.log('Alterando coluna foto de VARCHAR para TEXT');
+      await client.query('ALTER TABLE problemas ALTER COLUMN foto TYPE TEXT');
     }
 
     console.log('Verificação de colunas concluída');
@@ -102,7 +110,6 @@ async function addMissingColumns(client) {
     console.error('Erro ao verificar/adicionar colunas:', error);
   }
 }
-
 // Middleware
 app.use(cors({
   origin: 'https://pontourbano.onrender.com',
