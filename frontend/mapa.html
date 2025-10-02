@@ -947,30 +947,35 @@
     
     <script>
         // Função para verificar autenticação
-        async function checkAuth() {
-            try {
-                const response = await fetch('https://pontourbano.onrender.com/auth/check', {
-                    credentials: 'include'
-                });
-                const result = await response.json();
-                
-                if (result.authenticated) {
-                    // Atualizar dados do usuário
-                    if (result.user) {
-                        localStorage.setItem('userData', JSON.stringify(result.user));
-                    }
-                    return true;
-                } else {
-                    // Se não estiver autenticado, redirecionar para login
-                    window.location.href = 'login.html';
-                    return false;
-                }
-            } catch (error) {
-                console.error('Erro ao verificar autenticação:', error);
-                window.location.href = 'login.html';
-                return false;
+async function checkAuth() {
+    try {
+        const response = await fetch('https://pontourbano.onrender.com/auth/check', {
+            credentials: 'include'
+        });
+        const result = await response.json();
+        
+        if (result.authenticated) {
+            // Atualizar dados do usuário
+            if (result.user) {
+                localStorage.setItem('userData', JSON.stringify(result.user));
             }
+            return true;
+        } else {
+            // Se não estiver autenticado, redirecionar para login
+            window.location.href = 'login.html';
+            return false;
         }
+    } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        // Em caso de erro, verificar se temos dados no localStorage
+        const userData = localStorage.getItem('userData');
+        if (!userData) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        return true;
+    }
+}
 
         // Função para inicializar o mapa
         function initMap() {
@@ -1249,9 +1254,9 @@
                         document.getElementById('profileEmail').textContent = userData.email || 'email@exemplo.com';
                         
                         // Se houver foto de perfil, carregá-la
-                        if (userData.foto_perfil) {
-                            document.getElementById('profilePhoto').src = userData.foto_perfil;
+                          if (userData.foto_perfil) {
                             document.getElementById('userAvatar').src = userData.foto_perfil;
+                            document.getElementById('profilePhoto').src = userData.foto_perfil;
                         }
                         
                         settingsModal.style.display = 'block';
@@ -1446,11 +1451,11 @@
                     document.getElementById('fileName').textContent = fileName;
                 });
                 
-            } catch (error) {
-                console.error('Erro crítico na inicialização:', error);
-                showNotification('Erro crítico: ' + error.message, 'error');
-            }
-        });
+                } catch (error) {
+                    console.error('Erro crítico na inicialização:', error);
+                    showNotification('Erro crítico: ' + error.message, 'error');
+                }
+            });
     </script>
 </body>
 </html>
