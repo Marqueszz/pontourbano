@@ -262,14 +262,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Verificar se já está logado
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-            // Se já tem dados salvos, redirecionar para o mapa
-            window.location.href = 'mapa.html';
-            return;
-        }
-
         // Adicionar evento de submit ao formulário
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -291,7 +283,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ email, senha }),
-                    credentials: 'include' // Importante para cookies de sessão
+                    credentials: 'include' // importante para cookies de sessão
                 });
                 
                 const result = await response.json();
@@ -299,17 +291,11 @@
                 if (result.success) {
                     showNotification('Login realizado com sucesso!', 'success');
                     
-                    // Salvar dados do usuário no localStorage
-                    localStorage.setItem('userData', JSON.stringify({
-                        id: result.user.id,
-                        nome: result.user.nome,
-                        email: result.user.email
-                    }));
-                    
+                    // Não salvamos userData em localStorage para evitar login automático inconsistênte.
                     // Redirecionar após login bem-sucedido
                     setTimeout(() => {
                         window.location.href = 'mapa.html';
-                    }, 2000);
+                    }, 1000);
                 } else {
                     showNotification(result.message, 'error');
                 }
@@ -319,34 +305,20 @@
             }
         });
 
-        // Função para mostrar notificação
-        function showNotification(message, type = 'success') {
+        // função para mostrar notificações (mantive a sua implementação existente)
+        function showNotification(message, type = 'info') {
             const notification = document.getElementById('notification');
-            const notificationText = document.getElementById('notificationText');
+            if (!notification) return;
             
-            notificationText.textContent = message;
-            notification.className = 'notification'; // Reseta as classes
+            notification.className = ''; // reset
+            notification.classList.add(type === 'success' ? 'success' : type === 'error' ? 'error' : 'info', 'visible');
             
-            // Adiciona classes baseadas no tipo
-            notification.classList.add(type);
-            notification.classList.add('visible');
-            
-            // Ícone baseado no tipo
-            let iconClass;
-            switch(type) {
-                case 'success':
-                    iconClass = 'fas fa-check-circle';
-                    break;
-                case 'error':
-                    iconClass = 'fas fa-exclamation-circle';
-                    break;
-                default:
-                    iconClass = 'fas fa-info-circle';
-            }
+            let iconClass = 'fas fa-info-circle';
+            if (type === 'success') iconClass = 'fas fa-check-circle';
+            if (type === 'error') iconClass = 'fas fa-exclamation-triangle';
             
             notification.innerHTML = `<i class="${iconClass}"></i> <span id="notificationText">${message}</span>`;
             
-            // Esconde a notificação após 5 segundos
             setTimeout(() => {
                 notification.classList.remove('visible');
             }, 4000);
