@@ -960,9 +960,8 @@ async function checkAuth() {
     }
     const result = await response.json();
     if (result.authenticated) {
-      // Opcional: atualizar localStorage apenas para exibição (não é fonte da verdade)
       if (result.user) {
-        // localStorage.setItem('userData', JSON.stringify(result.user)); // descomente se quiser cache local
+        localStorage.setItem('userData', JSON.stringify(result.user)); // descomente se quiser cache local
       }
       return true;
     } else {
@@ -975,7 +974,6 @@ async function checkAuth() {
     return false;
   }
 }
-
 
         // Função para inicializar o mapa
         function initMap() {
@@ -1455,21 +1453,22 @@ async function checkAuth() {
                     showNotification('Erro crítico: ' + error.message, 'error');
                 }
             });
+                localStorage
+            document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+            if (!confirm('Tem certeza que deseja fazer logout?')) return;
+            try {
+                await fetch('https://pontourbano.onrender.com/logout', {
+                method: 'POST',
+                credentials: 'include'
+                });
+            } catch (e) {
+                console.warn('Logout: falha ao contatar servidor', e);
+            }
+            try { localStorage.removeItem('userData'); } catch(e) {}
+            window.location.href = 'login.html';
+            });
     </script>
 </body>
 </html>
 
-// Logout: invalidar sessão no servidor e limpar localStorage
-document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-  if (!confirm('Tem certeza que deseja fazer logout?')) return;
-  try {
-    await fetch('https://pontourbano.onrender.com/logout', {
-      method: 'POST',
-      credentials: 'include'
-    });
-  } catch (e) {
-    console.warn('Logout: falha ao contatar servidor', e);
-  }
-  try { localStorage.removeItem('userData'); } catch(e) {}
-  window.location.href = 'login.html';
-});
+
