@@ -105,12 +105,24 @@ async function addMissingColumns(client) {
       await client.query('ALTER TABLE problemas ALTER COLUMN foto TYPE TEXT');
     }
 
+    // Verificar se a coluna usuario_id existe na tabela problemas
+    const checkUsuarioIdColumn = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'problemas' AND column_name = 'usuario_id'
+    `);
+
+    if (checkUsuarioIdColumn.rows.length === 0) {
+      console.log('Adicionando coluna usuario_id à tabela problemas');
+      await client.query('ALTER TABLE problemas ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)');
+    }
+
     console.log('Verificação de colunas concluída');
   } catch (error) {
     console.error('Erro ao verificar/adicionar colunas:', error);
   }
-}
-// Middleware
+
+}// Middleware
 app.use(cors({
   origin: 'https://pontourbano.onrender.com',
   credentials: true
