@@ -973,6 +973,47 @@ async function checkAuth() {
   }
 }
 
+// Função para carregar e atualizar dados do usuário
+async function loadUserData() {
+    try {
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        
+        // Buscar dados atualizados do servidor se tivermos um ID de usuário
+        if (userData.id) {
+            const response = await fetch(`https://pontourbano.onrender.com/usuario/${userData.id}`, {
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    // Atualizar localStorage com dados mais recentes
+                    localStorage.setItem('userData', JSON.stringify(result.user));
+                    return result.user;
+                }
+            }
+        }
+        
+        return userData;
+    } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+        return JSON.parse(localStorage.getItem('userData') || '{}');
+    }
+}
+
+// Adicionar tratamento de erro para imagens que não carregam
+function addImageErrorHandling() {
+    const images = document.querySelectorAll('img[src*="foto_perfil"], img[src*="cloudinary"]');
+    images.forEach(img => {
+        img.onerror = function() {
+            // Se a imagem não carregar, usar a imagem padrão
+            this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNjQwIj48cGF0aCBmaWxsPSIjMWE3M2U4IiBkPSJNMzIwIDMxMkMzODYuMyAzMTIgNDQwIDI1OC4zIDQ0MCAxOTJDNDQwIDEyNS43IDM4Ni4zIDcyIDMyMCA3MkMyNTMuNyA3MiAyMDAgMTI1LjcgMjAwIDE5MkMyMDAgMjU4LjMgMjUzLjcgMzEyIDMyMCAzMTJ6TTI5MC4zIDM2OEMxOTEuOCAzNjggMTEyIDQ0Ny44IDExMiA1NDYuM0MxMTIgNTYyLjcgMTI1LjMgNTc2IDE0MS43IDU3Nkw0OTguMyA1NzZDNTE0LjcgNTc2IDUyOCA1NjIuNyA1MjggNTQ2LjNDNTI4IDQ0Ny44IDQ0OC4yIDM2OCAzNDkuNyAzNjhMMjkwLjMgMzY4eiIvPjwvc3ZnPg==';
+        };
+    });
+}
+
+addImageErrorHandling();
+
         // Função para inicializar o mapa
         function initMap() {
             const mapContainer = document.getElementById('map');
@@ -1013,8 +1054,8 @@ async function checkAuth() {
             }
 
             try {
-                // Carregar dados do usuário do localStorage
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                // Carregar dados do usuário
+                const userData = await loadUserData();
                 if (userData.nome) {
                     document.getElementById('userName').textContent = userData.nome;
                     document.getElementById('profileNameInput').value = userData.nome;
@@ -1022,9 +1063,12 @@ async function checkAuth() {
                     
                     // Se houver foto de perfil, carregá-la
                     if (userData.foto_perfil) {
-                        document.getElementById('userAvatar').src = userData.foto_perfil;
-                        document.getElementById('profilePhoto').src = userData.foto_perfil;
-                    }
+                    const timestamp = new Date().getTime();
+                    const photoUrl = userData.foto_perfil + '?t=' + timestamp;
+                    document.getElementById('userAvatar').src = photoUrl;
+                    document.getElementById('profilePhoto').src = photoUrl;
+                }
+
                 }
         
                 // Inicializar mapa
@@ -1174,9 +1218,9 @@ async function checkAuth() {
                     showNotification('Erro ao carregar problemas. Tente recarregar a página.', 'error');
                     document.getElementById('problemaCount').textContent = 'Erro ao carregar problemas';
                 }        
-                // Funcionalidade de pesquisa de endereços COM ABORT CONTROLLER
+                // Funcionalidade de pesquisa de endereços
                 let searchTimeout;
-                let searchController = null; // Novo: controller para cancelar requisições
+                let searchController = null; // controller para cancelar requisições
                 
                 const searchInput = document.getElementById('searchInput');
                 const searchResults = document.getElementById('searchResults');
@@ -1283,26 +1327,35 @@ async function checkAuth() {
         
                 // Verificar se os elementos existem
                 if (settingsBtn && settingsModal && closeModal) {
-                    settingsBtn.addEventListener('click', () => {
-                        console.log('Abrindo modal de configurações');
-                        
-                        // Atualizar os campos do perfil com os dados atuais
-                        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                        document.getElementById('profileNameInput').value = userData.nome || '';
-                        document.getElementById('profileEmail').textContent = userData.email || 'email@exemplo.com';
-                        
-                        // Se houver foto de perfil, carregá-la
-                          if (userData.foto_perfil) {
-                            document.getElementById('userAvatar').src = userData.foto_perfil;
-                            document.getElementById('profilePhoto').src = userData.foto_perfil;
-                        }
-                        
-                        settingsModal.style.display = 'block';
-                    });
+                settingsBtn.addEventListener('click', async () => {
+                    console.log('Abrindo modal de configurações');
+                    
+                    // Buscar dados atualizados do usuário
+                    const userData = await loadUserData();
+                    
+                    // Atualizar os campos do perfil com os dados atuais
+                    document.getElementById('profileNameInput').value = userData.nome || '';
+                    document.getElementById('profileEmail').textContent = userData.email || 'email@exemplo.com';
+                    
+                    // Se houver foto de perfil, carregá-la com timestamp para evitar cache
+                    if (userData.foto_perfil) {
+                        const timestamp = new Date().getTime();
+                        const photoUrl = userData.foto_perfil + '?t=' + timestamp;
+                        document.getElementById('userAvatar').src = photoUrl;
+                        document.getElementById('profilePhoto').src = photoUrl;
+                    } else {
+                        // Usar imagem padrão se não houver foto
+                        const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNjQwIj48cGF0aCBmaWxsPSIjMWE3M2U4IiBkPSJNMzIwIDMxMkMzODYuMyAzMTIgNDQwIDI1OC4zIDQ0MCAxOTJDNDQwIDEyNS43IDM4Ni4zIDcyIDMyMCA3MkMyNTMuNyA3MiAyMDAgMTI1LjcgMjAwIDE5MkMyMDAgMjU4LjMgMjUzLjcgMzEyIDMyMCAzMTJ6TTI5MC4zIDM2OEMxOTEuOCAzNjggMTEyIDQ0Ny44IDExMiA1NDYuM0MxMTIgNTY2LjcgMTI1LjMgNTc2IDE0MS43IDU3Nkw0OTguMyA1NzZDNTE0LjcgNTc2IDUyOCA1NjIuNyA1MjggNTQ2LjNDNTI4IDQ0Ny44IDQ0OC4yIDM2OCAzNDkuNyAzNjhMMjkwLjMgMzY4eiIvPjwvc3ZnPg==';
+                        document.getElementById('userAvatar').src = defaultAvatar;
+                        document.getElementById('profilePhoto').src = defaultAvatar;
+                    }
+                    
+                    settingsModal.style.display = 'block';
+                });
 
-                    closeModal.addEventListener('click', () => {
-                        settingsModal.style.display = 'none';
-                    });
+                closeModal.addEventListener('click', () => {
+                    settingsModal.style.display = 'none';
+                });
 
                     // Fechar modal ao clicar fora
                     window.addEventListener('click', (e) => {
@@ -1339,7 +1392,7 @@ async function checkAuth() {
 
                 // Salvar perfil COM CONTROLE DE CONCURRÊNCIA
                 let isSavingProfile = false;
-                
+
                 saveProfileBtn.addEventListener('click', async () => {
                     // Prevenir múltiplos cliques simultâneos
                     if (isSavingProfile) {
@@ -1356,7 +1409,6 @@ async function checkAuth() {
                     
                     const file = fotoPerfilInput.files[0];
                     if (file) {
-
                         // Aplicar validações das imagens
                         if (!file.type.startsWith('image/')) {
                             showNotification('Por favor, selecione apenas imagens', 'error');
@@ -1389,17 +1441,33 @@ async function checkAuth() {
                         if (result.success) {
                             showNotification('Perfil atualizado com sucesso!', 'success');
                             
+                            // ATUALIZAR TODOS OS ELEMENTOS DA FOTO
+                            const newPhotoUrl = result.user.foto_perfil;
+                            
                             // Atualizar localStorage
                             const userData = JSON.parse(localStorage.getItem('userData') || '{}');
                             userData.nome = result.user.nome;
-                            if (result.user.foto_perfil) {
-                                userData.foto_perfil = result.user.foto_perfil;
-                            }
+                            userData.foto_perfil = newPhotoUrl;
                             localStorage.setItem('userData', JSON.stringify(userData));
                             
-                            // Atualizar a barra de navegação
+                            // Atualizar todos os elementos que exibem a foto
                             document.getElementById('userName').textContent = userData.nome;
-                            document.getElementById('userAvatar').src = userData.foto_perfil || document.getElementById('userAvatar').src;
+                            
+                            // Atualizar avatar na barra de navegação
+                            const userAvatar = document.getElementById('userAvatar');
+                            userAvatar.src = newPhotoUrl;
+                            
+                            // Atualizar foto no modal de configurações
+                            const profilePhoto = document.getElementById('profilePhoto');
+                            profilePhoto.src = newPhotoUrl;
+                            
+                            // Forçar o recarregamento da imagem para evitar cache
+                            userAvatar.src = newPhotoUrl + '?t=' + new Date().getTime();
+                            profilePhoto.src = newPhotoUrl + '?t=' + new Date().getTime();
+                            
+                            // Limpar o input de arquivo para permitir nova seleção da mesma imagem
+                            fotoPerfilInput.value = '';
+                            
                         } else {
                             showNotification(result.message, 'error');
                         }
@@ -1412,8 +1480,8 @@ async function checkAuth() {
                         saveProfileBtn.disabled = false;
                         saveProfileBtn.textContent = 'Salvar Alterações';
                     }
-                });        
-            // Logout 
+                }); 
+               // Logout 
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 if (!confirm('Tem certeza que deseja fazer logout?')) return;
                 

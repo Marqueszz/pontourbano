@@ -303,7 +303,7 @@ app.get('/auth/check', (req, res) => {
   }
 });
 
-// Rota para atualizar perfil do usuário (incluindo foto de perfil)
+// Rota para atualizar perfil do usuário
 app.put('/perfil', requireAuth, upload.single('foto_perfil'), async (req, res) => {
   const { nome } = req.body;
   const userId = req.session.userId;
